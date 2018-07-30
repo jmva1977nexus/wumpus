@@ -26,12 +26,12 @@ public class StandardDungeonImpl extends BaseDungeon<StandardCell,StandardCellCo
 
 	private static final Logger LOG = LoggerFactory.getLogger(StandardDungeonImpl.class);
 
-	private static final String DUNGEON_SIZE = "dungeon.size";
-	private static final String DUNGEON_WUMPUS = "dungeon.wumpus";
-	private static final String DUNGEON_WELLS = "dungeon.wells";
-	private static final String DUNGEON_GOLD = "dungeon.gold";
+	public static final String DUNGEON_SIZE = "dungeon.size";
+	public static final String DUNGEON_WUMPUS = "dungeon.wumpus";
+	public static final String DUNGEON_WELLS = "dungeon.wells";
+	public static final String DUNGEON_GOLD = "dungeon.gold";
 
-	private static final String NAME = "Standard";
+	public static final String NAME = "Standard";
 
 
 	private final int wells;
