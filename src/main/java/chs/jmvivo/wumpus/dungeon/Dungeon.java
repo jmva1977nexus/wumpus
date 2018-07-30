@@ -19,6 +19,9 @@ public interface Dungeon {
 	 */
 	public void intialize(Player player);
 	
+	/**
+	 * @return current player
+	 */
 	public Player getPlayer();
 	
 

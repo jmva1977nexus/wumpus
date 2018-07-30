@@ -50,16 +50,6 @@ public class SimpleUI implements Ui {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see chs.jmvivo.wumpus.ui.Ui#draw(chs.jmvivo.wumpus.dungeon.Dungeon)
-	 */
-	@Override
-	public void draw(Dungeon dungeon) {
-		// Nothing to do here (for this implementation)
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * chs.jmvivo.wumpus.ui.Ui#waitForAction(chs.jmvivo.wumpus.dungeon.Player)
 	 */
@@ -76,7 +66,7 @@ public class SimpleUI implements Ui {
 
 		int select = askForInt("Select the number of action: ", 0, actions.size() - 1);
 
-		return player.doAaction(actions.get(select));
+		return player.doAnAction(actions.get(select));
 	}
 
 	private int askForInt(String prompt, int min, int max) {
@@ -259,6 +249,16 @@ public class SimpleUI implements Ui {
 			return new SimpleUI();
 		}
 
+	}
+
+	@Override
+	public void intialize() {
+		// Nothing to do
+	}
+	
+	@Override
+	public void shutdown() {
+		// Nothing to do
 	}
 
 }

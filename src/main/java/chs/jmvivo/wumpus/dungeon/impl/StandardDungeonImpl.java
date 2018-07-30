@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import chs.jmvivo.wumpus.Configuration;
 import chs.jmvivo.wumpus.Configuration.Item;
@@ -22,6 +24,8 @@ import chs.jmvivo.wumpus.dungeon.spi.DungeonForPlayer;
  */
 public class StandardDungeonImpl extends BaseDungeon<StandardCell,StandardCellContent> implements Dungeon, DungeonForPlayer<StandardCell,StandardCellContent> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(StandardDungeonImpl.class);
+
 	private static final String DUNGEON_SIZE = "dungeon.size";
 	private static final String DUNGEON_WUMPUS = "dungeon.wumpus";
 	private static final String DUNGEON_WELLS = "dungeon.wells";
@@ -37,21 +41,24 @@ public class StandardDungeonImpl extends BaseDungeon<StandardCell,StandardCellCo
 	private final int gold;
 
 	/**
+	 * Default constructor
+	 * 
 	 * @param configuration
 	 */
 	public StandardDungeonImpl(Configuration configuration) {
 
-		super((Integer) configuration.get(DUNGEON_SIZE).getValue());
-		this.wells = (Integer) configuration.get(DUNGEON_WELLS).getValue();
-		this.wumpus = (Integer) configuration.get(DUNGEON_WUMPUS).getValue();
-		this.gold = (Integer) configuration.get(DUNGEON_GOLD).getValue();
-
+		super(configuration.get(DUNGEON_SIZE).getValue());
+		this.wells = configuration.get(DUNGEON_WELLS).getValue();
+		this.wumpus = configuration.get(DUNGEON_WUMPUS).getValue();
+		this.gold = configuration.get(DUNGEON_GOLD).getValue();
+		LOG.debug("Create {}: wells {}, wumpus {}, gold {}", NAME, wells, wumpus, gold);
 		this.cells = null;
 	}
 
 	@Override
 	public void intialize(Player player) {
 		super.intialize(player);
+		LOG.debug("Initialize");
 
 		cells[0][0].setContent(StandardCellContent.START);
 
@@ -103,8 +110,8 @@ public class StandardDungeonImpl extends BaseDungeon<StandardCell,StandardCellCo
 			List<Pair<String, Item>> problems = new ArrayList<>();
 
 			// Check size
-			Item size = config.get(DUNGEON_SIZE);
-			int sizeInt = (Integer) size.getValue();
+			Item<Integer> size = config.get(DUNGEON_SIZE);
+			int sizeInt = size.getValue();
 			if (sizeInt < 3) {
 				problems.add(Pair.of("Too small", size));
 				return problems;
@@ -115,8 +122,8 @@ public class StandardDungeonImpl extends BaseDungeon<StandardCell,StandardCellCo
 			int cells = sizeInt * sizeInt;
 
 			// Check wells
-			Item wells = config.get(DUNGEON_WELLS);
-			int wellsInt = (Integer) wells.getValue();
+			Item<Integer> wells = config.get(DUNGEON_WELLS);
+			int wellsInt = wells.getValue();
 			if (wellsInt > cells / 2) {
 				problems.add(Pair.of(String.format("Too much well (try with %s)", cells / 5), wells));
 			} else if (wellsInt < 0) {
@@ -124,8 +131,8 @@ public class StandardDungeonImpl extends BaseDungeon<StandardCell,StandardCellCo
 			}
 
 			// Check wumpus
-			Item wumpus = config.get(DUNGEON_WUMPUS);
-			int wumpusInt = (Integer) wumpus.getValue();
+			Item<Integer> wumpus = config.get(DUNGEON_WUMPUS);
+			int wumpusInt = wumpus.getValue();
 			if (wumpusInt > cells / 4) {
 				problems.add(Pair.of(String.format("Too much wumpus (try with %s)", cells / 10), wumpus));
 			} else if (wumpusInt < 0) {
@@ -133,9 +140,9 @@ public class StandardDungeonImpl extends BaseDungeon<StandardCell,StandardCellCo
 			}
 
 			// Check gold
-			Item gold = config.get(DUNGEON_WUMPUS);
-			int goldInt = (Integer) gold.getValue();
-			if (goldInt > cells / 10) {
+			Item<Integer> gold = config.get(DUNGEON_WUMPUS);
+			int goldInt = gold.getValue();
+			if (goldInt > 1 && goldInt > cells / 10) {
 				problems.add(Pair.of(String.format("Too much gold (try with %s)", cells / 20), wumpus));
 			} else if (goldInt < 1) {
 				problems.add(Pair.of("Invalid gold number", gold));

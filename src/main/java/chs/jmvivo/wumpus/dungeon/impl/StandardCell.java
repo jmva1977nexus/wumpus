@@ -7,7 +7,7 @@ import java.util.List;
 import chs.jmvivo.wumpus.dungeon.spi.CellForDungeon;
 
 /**
- * Representation of cell
+ * Cell representation of {@link StandardCellContent}
  * 
  * @author jmvivo
  */
@@ -57,6 +57,9 @@ public class StandardCell implements CellForDungeon<StandardCellContent> {
 	@Override
 	public boolean killContent() {
 		if (content.canBeKilled()) {
+			String message = content.getKilledContentMessage();
+			this.content = (StandardCellContent) content.getKilledContent();
+			this.perceptions.add(message);
 			return true;
 		}
 		return false;

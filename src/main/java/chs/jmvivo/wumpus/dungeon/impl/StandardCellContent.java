@@ -2,16 +2,20 @@ package chs.jmvivo.wumpus.dungeon.impl;
 
 import chs.jmvivo.wumpus.dungeon.CellContent;
 
+/**
+ * Standard game cell content:
+ * 
+ * Wumpus, Well and Gold
+ * 
+ * @author jmvivo
+ *
+ */
 public enum StandardCellContent implements CellContent {
 	// @formatter:off
-	EMPTY(false, false, false, null, null, null, null, null), 
-	START(false, false, false, null, null, null, null, null), 
-	WELL(true, false, false, "You fall into a well!!!!", null, null, null, null), 
-	WUMPUS_DEAD(false, false, false, null, null, null, null, null), 
-	WUMPUS_ALIVE(true, false, true, "The Wumpus kill you!!!", null, 
-			"You kill the Wumpus!", "The Wumpus survived!!", WUMPUS_DEAD), 
-	GOLD(false, false, true, null, "You found the GOLD!!", null, null, null);
-    // @formatter:on
+	EMPTY(), START(), WELL(true, false, false, "You fall into a well!!!!", null), WUMPUS_DEAD(), WUMPUS_ALIVE(
+			"The Wumpus kill you!!!", "You kill the Wumpus!", "The Wumpus survived!!",
+			WUMPUS_DEAD), GOLD(false, true, false, null, "You found the GOLD!!");
+	// @formatter:on
 
 	private final boolean mortal;
 
@@ -29,6 +33,20 @@ public enum StandardCellContent implements CellContent {
 
 	private StandardCellContent killedConent;
 
+	private StandardCellContent() {
+		this(false, false, false, null, null, null, null, null);
+	}
+
+	private StandardCellContent(boolean mortal, boolean win, boolean canBeKilled, String dieMessage,
+			String winMessage) {
+		this(mortal, win, false, dieMessage, winMessage, null, null, null);
+	}
+
+	private StandardCellContent(String dieMessage, String killedContentMessage, String missKilledContentMessage,
+			StandardCellContent killedContent) {
+		this(true, false, true, dieMessage, null, killedContentMessage, missKilledContentMessage, killedContent);
+	}
+
 	private StandardCellContent(boolean mortal, boolean win, boolean canBeKilled, String dieMessage, String winMessage,
 			String killedContentMessage, String missKilledContentMessage, StandardCellContent killedContent) {
 		this.mortal = mortal;
@@ -43,6 +61,11 @@ public enum StandardCellContent implements CellContent {
 		} else {
 			this.killedConent = this;
 		}
+	}
+
+	@Override
+	public String getName() {
+		return name();
 	}
 
 	@Override
@@ -62,25 +85,27 @@ public enum StandardCellContent implements CellContent {
 
 	@Override
 	public String getDieMessage() {
-		return null;
+		return dieMessage;
 	}
 
 	@Override
 	public String getWinMessage() {
-		// TODO Auto-generated method stub
-		return null;
+		return winMessage;
 	}
 
 	@Override
 	public String getKilledContentMessage() {
-		// TODO Auto-generated method stub
-		return null;
+		return killedContentMessage;
 	}
 
 	@Override
 	public String getMissKilledContentMessage() {
-		// TODO Auto-generated method stub
-		return null;
+		return missKilledContentMessage;
+	}
+
+	@Override
+	public CellContent getKilledContent() {
+		return killedConent;
 	}
 
 }

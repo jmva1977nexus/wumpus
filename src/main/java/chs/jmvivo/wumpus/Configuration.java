@@ -7,8 +7,14 @@ import java.util.function.BiConsumer;
 /**
  * Configuration class
  * 
+ * This class registers and store the configuration needed for all the assets of
+ * the game.
+ * 
+ * Every configuration item is identified by a name or key
+ * 
  * @author jmvivo
- *
+ * @see #addItem(String, ItemType, Class, Object)
+ * @see #get(String)
  */
 public class Configuration {
 	
@@ -42,6 +48,10 @@ public class Configuration {
 	public void done() {
 		this.done = true;
 	}
+	
+	public boolean isEmpty() {
+		return this.items.isEmpty();
+	}
 
 
 	/**
@@ -74,8 +84,8 @@ public class Configuration {
 	 * @param name
 	 * @return
 	 */
-	public Item<?> get(String name) {
-		return items.get(name);
+	public <T> Item<T> get(String name) {
+		return (Item<T>) items.get(name);
 	}
 
 	/**
@@ -109,8 +119,8 @@ public class Configuration {
 		/**
 		 * @return current configuration value
 		 */
-		public T getValue() {
-			return value;
+		public <T> T getValue() {
+			return (T) value;
 		}
 
 		/**
@@ -119,7 +129,7 @@ public class Configuration {
 		 * @param value
 		 */
 		public void setValue(T value) {
-			this.value = value;
+			this.value = (T) value;
 		}
 
 		/**

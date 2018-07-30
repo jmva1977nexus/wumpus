@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import chs.jmvivo.wumpus.dungeon.CellContent;
 import chs.jmvivo.wumpus.dungeon.Player;
 import chs.jmvivo.wumpus.dungeon.spi.CellForDungeon;
@@ -19,7 +22,10 @@ import chs.jmvivo.wumpus.dungeon.spi.DungeonForPlayer;
  * @author jmvivo
  *
  */
-public abstract class BaseDungeon<CELL extends CellForDungeon<CONTENT>, CONTENT extends CellContent> implements DungeonForPlayer<CELL,CONTENT> {
+public abstract class BaseDungeon<CELL extends CellForDungeon<CONTENT>, CONTENT extends CellContent>
+		implements DungeonForPlayer<CELL, CONTENT> {
+
+	private static final Logger LOG = LoggerFactory.getLogger(BaseDungeon.class);
 
 	protected final int size;
 
@@ -27,8 +33,14 @@ public abstract class BaseDungeon<CELL extends CellForDungeon<CONTENT>, CONTENT 
 	
 	protected CELL[][] cells;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param size
+	 */
 	protected BaseDungeon(int size) {
 		this.size = size;
+		LOG.trace("Dungeon size {}", size);
 	}
 
 	@Override
@@ -36,9 +48,11 @@ public abstract class BaseDungeon<CELL extends CellForDungeon<CONTENT>, CONTENT 
 		return player;
 	}
 
+	/**
+	 * Creates the cells and fill its as "empty"
+	 */
 	protected abstract void createEmptyCells();
-	
-	
+
 	@Override
 	public void intialize(Player player) {
 		this.player = player;
@@ -57,6 +71,7 @@ public abstract class BaseDungeon<CELL extends CellForDungeon<CONTENT>, CONTENT 
 	 */
 	protected void generateObjects(CONTENT type, final int number, Optional<String> perception) {
 		Random rnd = new Random(System.currentTimeMillis());
+		LOG.debug("Generating Objects: {} [{}]", type.getName(), number);
 		int count = 0;
 		while (count < number) {
 			int row = rnd.nextInt(size);
@@ -68,6 +83,8 @@ public abstract class BaseDungeon<CELL extends CellForDungeon<CONTENT>, CONTENT 
 				continue;
 			}
 			cell.setContent(type);
+			LOG.debug("Cell[{},{}} <- {}", cell.getRow(), cell.getCol(), type.getName());
+
 			if (perception.isPresent()) {
 				addPerceptionForRelative(cell, perception.get());
 			}
@@ -106,8 +123,10 @@ public abstract class BaseDungeon<CELL extends CellForDungeon<CONTENT>, CONTENT 
 		relatives.add(getCell(cell.getRow() - 1, cell.getCol()));
 		relatives.add(getCell(cell.getRow(), cell.getCol() + 1));
 		relatives.add(getCell(cell.getRow(), cell.getCol() - 1));
-		relatives.stream().filter(c -> c != null).filter(c -> c.getContent() == StandardCellContent.EMPTY)
-				.forEach(c -> c.addPerception(perception));
+		relatives.stream().filter(c -> c != null).forEach(c -> {
+			c.addPerception(perception);
+			LOG.trace("Cell[{},{}].perception += {}", c.getRow(), c.getCol(), perception);
+		});
 	}
 
 }

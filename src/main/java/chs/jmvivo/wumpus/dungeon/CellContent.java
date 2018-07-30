@@ -7,13 +7,22 @@ package chs.jmvivo.wumpus.dungeon;
  *
  */
 public interface CellContent {
-
+	
+	
+	/**
+	 * @return description of the content
+	 */
+	String getName();
+	
 	/**
 	 * @return true if content is mortal for player (player dies if go into a
 	 *         cell with this content)
 	 */
 	boolean isMortal();
 	
+	/**
+	 * @return message to show when player die by this content
+	 */
 	String getDieMessage();
 
 	/**
@@ -23,8 +32,7 @@ public interface CellContent {
 	
 	
 	/**
-	 * 
-	 * @return
+	 * @return message to show when player win by this content
 	 */
 	String getWinMessage();
 
@@ -34,14 +42,19 @@ public interface CellContent {
 	boolean canBeKilled();
 	
 	/**
-	 * @return
+	 * @return message to show when player kill the content
 	 */
 	String getKilledContentMessage();
 
 	/**
-	 * 
-	 * @return
+	 * @return message to show when player miss the shot
 	 */
 	String getMissKilledContentMessage();
+	
+	
+	/**
+	 * @return content to set when player kill this content
+	 */
+	CellContent getKilledContent();
 
 }

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import chs.jmvivo.wumpus.Configuration;
 import chs.jmvivo.wumpus.Configuration.Item;
@@ -26,9 +28,16 @@ import chs.jmvivo.wumpus.dungeon.spi.Orientation;
  */
 public class StandardPlayer implements Player {
 
+	private static final Logger LOG = LoggerFactory.getLogger(StandardDungeonImpl.class);
+
 	public static final String NAME = "Standar";
 	public static final String PLAYER_ARROWS = "player.arrows";
 
+	/**
+	 * Standard game actions
+	 * 
+	 * @author jmvivo
+	 */
 	private enum PlayerAction implements Action {
 		ADVANCE("Advance"), TURN_LEFT("Turn left"), TURN_RIGHT("Turn right"), THROW_ARROW("Throw an arrow"), EXIT(
 				"Exit of dungeon");
@@ -49,24 +58,43 @@ public class StandardPlayer implements Player {
 
 	private int maxArrows = 0;
 
+	/**
+	 * current available arrows
+	 */
 	private int currentArrows = 0;
 
+	/**
+	 * current player orientation
+	 */
 	private Orientation orientation = Orientation.NORTH;
 
+	/**
+	 *  Row of current  dungeon location
+	 */
 	private int row = 0;
 
+	/**
+	 *  Column of current  dungeon location
+	 */
 	private int col = 0;
 
+	/**
+	 * Constructors
+	 * 
+	 * @param config
+	 */
 	public StandardPlayer(Configuration config) {
-		this.maxArrows = (Integer) config.get(PLAYER_ARROWS).getValue();
+		this.maxArrows = config.get(PLAYER_ARROWS).getValue();
+		LOG.debug("Create {}: arrows {}", NAME, maxArrows);
 	}
 
 	@Override
-	public Event doAaction(Action action) {
+	public Event doAnAction(Action action) {
 		if (!getAvailableActions().contains(action)) {
 			throw new IllegalArgumentException("Unsupported Action: " + action.toString());
 		}
 		PlayerAction pAction = (PlayerAction) action;
+		LOG.debug("Do action: {} in [{},{}] {}", pAction.name(), row, col, orientation.name() );
 		switch (pAction) {
 		case ADVANCE:
 			return advance();
@@ -88,13 +116,24 @@ public class StandardPlayer implements Player {
 		}
 	}
 
+	/**
+	 * Implements {@link PlayerAction#EXIT} action
+	 * 
+	 * @return
+	 */
 	private Event exitFromDungeon() {
 		return new DefaultEvent(true, false, false);
 	}
 
+	/**
+	 * Implements {@link PlayerAction#THROW_ARROW} action
+	 * 
+	 * @return
+	 */
 	private Event throwArrow() {
 		// decrease current arrows count
 		currentArrows--;
+		LOG.debug("Current arrows: {}", currentArrows );
 		
 		// Get the next cell in front of player
 		int advance = 1;
@@ -102,12 +141,16 @@ public class StandardPlayer implements Player {
 		// Until arrows touch a wall (cell = null) or found a "killable" content
 		while (nextCell != null) {
 			CellContent content = nextCell.getContent();
+			LOG.trace("Arrows found: {} [{},{}]", content.getName(), nextCell.getRow(), nextCell.getCol() );
 			if (content.canBeKilled()) {
+				LOG.trace("Try to kill: {}", content.getName() );
 				// Try to kill cell content
 				if (nextCell.killContent()) {
+					LOG.debug("Killed --> {}", nextCell.getContent().getName());
 					// Content killed
 					return DefaultEvent.createMessage(content.getKilledContentMessage());
 				} else {
+					LOG.debug("Miss the shot  --> {}", nextCell.getContent().getName());
 					// Miss the shot
 					return DefaultEvent.createMessage(content.getMissKilledContentMessage());
 				}
@@ -115,10 +158,16 @@ public class StandardPlayer implements Player {
 			advance++;
 			nextCell = getCellInFont(advance);
 		}
+		LOG.debug("Arrow broken");
 		// Arrows found the wall
 		return DefaultEvent.createMessage("The arrow broke against the wall");
 	}
 
+	/**
+	 * Implements {@link PlayerAction#TURN_RIGHT}
+	 * 
+	 * @return 
+	 */
 	private Event turnRight() {
 		switch (orientation) {
 		case NORTH:
@@ -140,6 +189,11 @@ public class StandardPlayer implements Player {
 		return getPerceptions(getCurrentCell().getPerceptions());
 	}
 
+	/**
+	 * Implements {@link PlayerAction#TURN_LEFT}
+	 * 
+	 * @return 
+	 */
 	private Event turnLeft() {
 		switch (orientation) {
 		case NORTH:
@@ -161,6 +215,11 @@ public class StandardPlayer implements Player {
 		return getPerceptions(getCurrentCell().getPerceptions());
 	}
 
+	/**
+	 * Implements {@link PlayerAction#ADVANCE}
+	 * 
+	 * @return 
+	 */
 	private Event advance() {
 		// Get the next Cell
 		Cell nextCell = getCellInFont();
@@ -172,11 +231,15 @@ public class StandardPlayer implements Player {
 
 		// Check the cell content
 		CellContent content = nextCell.getContent();
+		
+		LOG.debug("Go into [{},{}] --> {}", row, col,content.getName());
 
 		if (content.isMortal()) {
+			LOG.debug("Mortal: {}", content.getDieMessage());
 			// Player die
 			return DefaultEvent.createPlayerDie(content.getDieMessage());
 		} else if (content.isWinCondition()) {
+			LOG.debug("Win: {}", content.getDieMessage());
 			// Player win
 			return DefaultEvent.createPlayerWin(content.getWinMessage());
 		}
@@ -248,6 +311,9 @@ public class StandardPlayer implements Player {
 		return getCellInFont(1);
 	}
 	
+	/**
+	 * @return current cell
+	 */
 	private Cell getCurrentCell() {
 		return dungeon.getCell(row, col);
 	}
@@ -280,8 +346,8 @@ public class StandardPlayer implements Player {
 		public List<Pair<String, Item>> validate(Configuration config) {
 			List<Pair<String, Item>> problems = new ArrayList<>();
 			// Check arrows
-			Item arrows = config.get(PLAYER_ARROWS);
-			int arrowsInt = (Integer) arrows.getValue();
+			Item<Integer> arrows = config.get(PLAYER_ARROWS);
+			int arrowsInt = arrows.getValue();
 			if (arrowsInt < 0) {
 				problems.add(Pair.of("Invalid arrows number", arrows));
 			}

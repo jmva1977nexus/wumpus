@@ -1,5 +1,6 @@
 package chs.jmvivo.wumpus;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -9,8 +10,11 @@ import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import chs.jmvivo.wumpus.Configuration.Item;
+import chs.jmvivo.wumpus.Configuration.ItemType;
 import chs.jmvivo.wumpus.dungeon.Dungeon;
 import chs.jmvivo.wumpus.dungeon.Dungeon.DungeonFactory;
 import chs.jmvivo.wumpus.dungeon.Event;
@@ -29,6 +33,8 @@ import chs.jmvivo.wumpus.ui.impl.SimpleUI;
  *
  */
 public class Game {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(Game.class);
 
 	private static Set<DungeonFactory> dungeonsFactories = new LinkedHashSet<>();
 	private static Set<PlayerFactory> playerFactories = new LinkedHashSet<>();
@@ -44,46 +50,49 @@ public class Game {
 
 	/**
 	 * Main method: Creates a new Game instance, calls game configuration and
-	 * start de game
+	 * starts the game
 	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) {
 
-		// TODO move intialization to ServieLocator class
+		// TODO move initialization to ServieLocator class
 		registerDungeon(new StandardDungeonImpl.StandardDungeonImplFactory());
 		registerPlayer(new StandardPlayer.StandardPlayerFactory());
 		registerUi(new SimpleUI.SimpleUIFactory());
-
+		
 		Game game = new Game();
+
 		game.configure();
 		game.play();
 	}
 
 	public static void registerDungeon(DungeonFactory factory) {
 		dungeonsFactories.add(factory);
-		System.out.println("Register dungeon: " + factory.getIdentifier());
+		LOG.info("Register dungeon: {}", factory.getIdentifier());
 	}
 
 	public static void registerPlayer(PlayerFactory factory) {
 		playerFactories.add(factory);
-		System.out.println("Register player: " + factory.getIdentifier());
+		LOG.info("Register player: {}", factory.getIdentifier());
 	}
 
 	public static void registerUi(UiFactory factory) {
 		uiFactories.add(factory);
-		System.out.println("Register ui: " + factory.getIdentifier());
+		LOG.info("Register UI: {}", factory.getIdentifier());
 	}
 
 	/**
-	 * Creates a new Game instance
+	 * Default constructor
 	 */
 	public Game() {
 		this(null, null, null, null);
 	}
 
 	/**
-	 * Create a new game instance with predefined configuration
+	 * Create a new game instance with predefined configuration and assets
+	 * 
+	 * (useful for test or predefined parameters)
 	 * 
 	 * @param ui
 	 * @param dungeon
@@ -108,12 +117,24 @@ public class Game {
 		}
 		configuration = new Configuration();
 
+		// Prepare UI
+		UiFactory uiFactory = null;
 		if (ui == null) {
 			Ui simpleUi = new SimpleUI();
+			simpleUi.intialize();
 
-			ui = configureFactory("User Interface", uiFactories, simpleUi).build(configuration);
+			uiFactory = configureFactory("User Interface", uiFactories, simpleUi);
+			uiFactory.registerConfiguration(configuration);
+			simpleUi.askForConfiguration(configuration);
+			if (!configuration.isEmpty()) {
+				simpleUi.askForConfiguration(configuration);
+				validateConfigurationOf(uiFactory, simpleUi);
+			}
+			ui = uiFactory.build(configuration);
+			ui.intialize();
 		}
 
+		// Pre
 		DungeonFactory dungeonFactory = null;
 		if (dungeon == null) {
 			dungeonFactory = configureFactory("Dungeon", dungeonsFactories, ui);
@@ -139,7 +160,11 @@ public class Game {
 	}
 
 	/**
-	 * Starts the game
+	 * Starts the game.
+	 * 
+	 * This method contains the main game loop
+	 * 
+	 * Requires already {@link #configure()}
 	 * 
 	 */
 	public void play() {
@@ -177,8 +202,18 @@ public class Game {
 			// Ask for play again
 			restart = ui.askOption("Do you want play again?", 1, "Yes", "No");
 		} while (restart == 0);
+		ui.showMessage("Bye!!!");
+		ui.shutdown();
 	}
 
+	/**
+	 * Configure a kind of factory. If there is only one option user will not be asked
+	 * 
+	 * @param option description of asset
+	 * @param factories which can be selected
+	 * @param uiToUse to ask the user
+	 * @return
+	 */
 	private <T, F extends Factory<T>> F configureFactory(String option, Collection<F> factories, Ui uiToUse) {
 		if (uiToUse == null) {
 			throw new IllegalStateException("Ui is required!!");
@@ -197,6 +232,12 @@ public class Game {
 		return factory;
 	}
 
+	/**
+	 * Configure all assets
+	 * 
+	 * @param dungeonFactory
+	 * @param playerFactory
+	 */
 	private void configureItems(DungeonFactory dungeonFactory, PlayerFactory playerFactory) {
 		if (dungeonFactory != null) {
 			validateConfigurationOf(dungeonFactory);
@@ -207,14 +248,30 @@ public class Game {
 		configuration.done();
 	}
 
+	/**
+	 * Validate factory configuration
+	 * 
+	 * @param factory
+	 */
 	private void validateConfigurationOf(Factory<?> factory) {
+		validateConfigurationOf(factory,ui);
+	}
+
+	/**
+	 * Validate factory configuration 
+	 * 
+	 * @param factory
+	 * @param uiToUse
+	 */
+	private void validateConfigurationOf(Factory<?> factory, final Ui uiToUse) {
 		List<Pair<String, Item>> errors = Collections.emptyList();
 		do {
 			errors.forEach(info -> {
-				ui.askForConfigurationItem(info.getValue(), Optional.of(info.getKey()));
+				uiToUse.askForConfigurationItem(info.getValue(), Optional.of(info.getKey()));
 			});
 			errors = factory.validate(configuration);
 
 		} while (CollectionUtils.isNotEmpty(errors));
 	}
+	
 }
